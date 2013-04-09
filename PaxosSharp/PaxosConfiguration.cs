@@ -18,7 +18,16 @@ namespace PaxosSharp
             AcceptorRecordCapacity = 1024;
             LearnerRecordCapacity = 512;
             ProposerRecordCapacity = 512;
+            Phase1Timeout = TimeSpan.FromMilliseconds(30);
+            Phase2Timeout = TimeSpan.FromMilliseconds(150);
+            ProposerPhase2Concurrency = 2000;
         }
+
+        public int ProposerPhase2Concurrency { get; private set; }
+
+        public TimeSpan Phase1Timeout { get; private set; }
+
+        public TimeSpan Phase2Timeout { get; private set; }
 
         public int AcceptorCount { get; private set; }
 
@@ -41,5 +50,7 @@ namespace PaxosSharp
         public IMessageBus MessageBus { get; private set; }
 
         public TraceSource TraceSource { get; private set; }
+
+        public bool LeaderEventsUpdateInterval { get; private set; }
     }
 }

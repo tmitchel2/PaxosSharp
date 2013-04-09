@@ -4,9 +4,12 @@ using System.Linq;
 
 namespace PaxosSharp.Messages
 {
-    internal class LeanerSyncMessage : Message
+    /// <summary>
+    /// Repeat message.  Used to sync a learner who has fallen behind.
+    /// </summary>
+    internal class RepeatMessage : Message
     {
-        public LeanerSyncMessage(IEnumerable<int> instanceIds)
+        public RepeatMessage(IEnumerable<int> instanceIds)
         {
             InstanceIds = new ReadOnlyCollection<int>(instanceIds.ToList());
         }

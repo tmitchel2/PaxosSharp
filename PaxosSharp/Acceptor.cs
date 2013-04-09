@@ -39,28 +39,28 @@ namespace PaxosSharp
 
         private Task<bool> OnReceiveMessage(Message message)
         {
-            if (message is PrepareMessage)
+            if (message is PrepareRequestMessage)
             {
-                OnReceivePrepareMessage(message as PrepareMessage);
+                OnReceivePrepareMessage(message as PrepareRequestMessage);
                 return new Task<bool>(() => true);
             }
             
-            if (message is AcceptMessage)
+            if (message is AcceptRequestMessage)
             {
-                OnReceiveAcceptMessage(message as AcceptMessage);
+                OnReceiveAcceptMessage(message as AcceptRequestMessage);
                 return new Task<bool>(() => true);
             }
 
-            if (message is LeanerSyncMessage)
+            if (message is RepeatMessage)
             {
-                OnReceiveLearnerSyncMessage(message as LeanerSyncMessage);
+                OnReceiveLearnerSyncMessage(message as RepeatMessage);
                 return new Task<bool>(() => true);
             }
 
             return new Task<bool>(() => false);
         }
 
-        private void OnReceivePrepareMessage(PrepareMessage message)
+        private void OnReceivePrepareMessage(PrepareRequestMessage message)
         {
             var record = _records[GetRecordIndex(message.InstanceId)];
 
@@ -133,7 +133,7 @@ namespace PaxosSharp
             }
         }
 
-        private void OnReceiveAcceptMessage(AcceptMessage message)
+        private void OnReceiveAcceptMessage(AcceptRequestMessage message)
         {
             var record = _records[GetRecordIndex(message.InstanceId)];
 
@@ -192,7 +192,7 @@ namespace PaxosSharp
             }
         }
 
-        private void OnReceiveLearnerSyncMessage(LeanerSyncMessage message)
+        private void OnReceiveLearnerSyncMessage(RepeatMessage message)
         {
             foreach (var instanceId in message.InstanceIds)
             {
@@ -200,7 +200,7 @@ namespace PaxosSharp
             }
         }
 
-        private void ApplyAccept(AcceptorRecord record, AcceptMessage message)
+        private void ApplyAccept(AcceptorRecord record, AcceptRequestMessage message)
         {
             // Update record
             record.InstanceId = message.InstanceId;
@@ -217,7 +217,7 @@ namespace PaxosSharp
         private void SendLearnMessage(AcceptorRecord record)
         {
             Log(TraceEventType.Verbose, "A{0}: Sending learn for iid:{1}", Id, record.InstanceId);
-            Configuration.MessageBus.Publish(new LearnMessage(record.InstanceId, record.Value, record.BallotId, Id));
+            Configuration.MessageBus.Publish(new AcceptResponseMessage(record.InstanceId, record.Value, record.BallotId, Id));
         }
 
         private void SyncLearner(int instanceId)
@@ -266,9 +266,9 @@ namespace PaxosSharp
 
         private void SendPromise(AcceptorRecord record)
         {
-            var message = new PromiseMessage(record.InstanceId, record.BallotId, record.ValueBallotId, record.Value, Id);
-            Log(TraceEventType.Verbose, "A{0}: Promise for iid:{1} added to buffer", Id, message.InstanceId);
-            Configuration.MessageBus.Publish(message);
+            Log(TraceEventType.Verbose, "A{0}: Promise for iid:{1} added to buffer", Id, record.InstanceId);
+            Configuration.MessageBus.Publish(
+                new PrepareResponseMessage(record.InstanceId, record.BallotId, record.ValueBallotId, record.Value, Id));
         }
 
         private void UpdateNonVolatileRecord(AcceptorRecord record)

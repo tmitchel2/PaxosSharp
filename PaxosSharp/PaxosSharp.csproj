@@ -44,16 +44,19 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Learner.cs" />
-    <Compile Include="Messages\AcceptMessage.cs" />
-    <Compile Include="Messages\LeanerSyncMessage.cs" />
-    <Compile Include="Messages\LearnMessage.cs" />
+    <Compile Include="Messages\AcceptRequestMessage.cs" />
+    <Compile Include="Messages\LeaderMessage.cs" />
+    <Compile Include="Messages\PingMessage.cs" />
+    <Compile Include="Messages\RepeatMessage.cs" />
+    <Compile Include="Messages\AcceptResponseMessage.cs" />
     <Compile Include="Messages\Message.cs" />
-    <Compile Include="Messages\PrepareMessage.cs" />
-    <Compile Include="Messages\PromiseMessage.cs" />
+    <Compile Include="Messages\PrepareRequestMessage.cs" />
+    <Compile Include="Messages\PrepareResponseMessage.cs" />
     <Compile Include="PaxosConfiguration.cs" />
     <Compile Include="ProcessStatus.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proposer.cs" />
+    <Compile Include="ProposerLeader.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

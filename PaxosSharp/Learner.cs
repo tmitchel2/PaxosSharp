@@ -12,7 +12,7 @@ namespace PaxosSharp
         private readonly int _majority;
         private readonly object _valuesSyncLock;
         private readonly object _recordsSyncLock;
-        private readonly LearnerRecord[] _records;
+        private readonly LearnerState[] _instanceStates;
         private int _highestSeenInstanceId;
         private int _highestQueuedInstanceId;
         private int _highestClosedInstanceId;
@@ -31,11 +31,11 @@ namespace PaxosSharp
             _highestClosedInstanceId = -1;
             _valuesSyncLock = new object();
             _recordsSyncLock = new object();
-            _records = new LearnerRecord[256];
+            _instanceStates = new LearnerState[256];
             
-            for (var i = 0; i < _records.Length; i++)
+            for (var i = 0; i < _instanceStates.Length; i++)
             {
-                _records[i] = new LearnerRecord(-1, Configuration.AcceptorCount);
+                _instanceStates[i] = new LearnerState(-1, Configuration.AcceptorCount);
             }
         }
 
@@ -65,6 +65,12 @@ namespace PaxosSharp
 
             value = null;
             return false;
+        }
+
+        public bool IsClosed(int instanceId)
+        {
+            var state = _instanceStates[GetRecordIndex(instanceId)];
+            return instanceId == state.InstanceId && state.FinalValue != null;
         }
 
         internal LearnerValueWrapper GetNextValueWrapper()
@@ -120,7 +126,7 @@ namespace PaxosSharp
                 
             for (var i = _highestQueuedInstanceId + 1; i < _highestSeenInstanceId; i++)
             {
-                var record = _records[GetRecordIndex(i)];
+                var record = _instanceStates[GetRecordIndex(i)];
 
                 // Not closed of never seen, request sync
                 if ((record.InstanceId == i && !IsClosed(record)) || record.InstanceId < i)
@@ -136,7 +142,7 @@ namespace PaxosSharp
                             instanceIds.Count,
                             _highestQueuedInstanceId + 1,
                             _highestSeenInstanceId);
-                        Configuration.MessageBus.Publish(new LeanerSyncMessage(instanceIds));
+                        Configuration.MessageBus.Publish(new RepeatMessage(instanceIds));
                         instanceIds = new List<int>();
                     }
                 }
@@ -145,16 +151,16 @@ namespace PaxosSharp
 
         private Task<bool> OnReceiveMessage(Message message)
         {
-            if (message is LearnMessage)
+            if (message is AcceptResponseMessage)
             {
-                OnReceiveLearnMessage((LearnMessage)message);
+                OnReceiveLearnMessage((AcceptResponseMessage)message);
                 return Task<bool>.Factory.StartNew(() => true);
             }
 
             return Task<bool>.Factory.StartNew(() => false);
         }
 
-        private void OnReceiveLearnMessage(LearnMessage message)
+        private void OnReceiveLearnMessage(AcceptResponseMessage message)
         {
             lock (_recordsSyncLock)
             {
@@ -189,7 +195,7 @@ namespace PaxosSharp
             {
                 while (true)
                 {
-                    var record = _records[GetRecordIndex(instanceId)];
+                    var record = _instanceStates[GetRecordIndex(instanceId)];
                     if (!IsClosed(record))
                     {
                         break;
@@ -199,7 +205,7 @@ namespace PaxosSharp
                     var wrapper = new LearnerValueWrapper
                         {
                             InstanceId = instanceId,
-                            BallotId = record.FinalValueBallot,
+                            BallotId = record.LastUpdateBallot,
                             Value = record.FinalValue
                         };
                     record.FinalValue = null;
@@ -221,13 +227,13 @@ namespace PaxosSharp
             }
         }
 
-        private bool HaveMajorityForRecord(LearnMessage message)
+        private bool HaveMajorityForRecord(AcceptResponseMessage message)
         {
-            var record = _records[GetRecordIndex(message.InstanceId)];
+            var record = _instanceStates[GetRecordIndex(message.InstanceId)];
             var count = 0;
             for (var i = 0; i < Configuration.AcceptorCount; i++)
             {
-                var storedLearn = record.LearnMessages[i];
+                var storedLearn = record.ResponseMessages[i];
                 if (storedLearn == null || storedLearn.Value != message.Value)
                 {
                     continue;
@@ -237,7 +243,7 @@ namespace PaxosSharp
                 if (count >= _majority)
                 {
                     Log(TraceEventType.Verbose,"L{0}: Reached majority, instance {1} is now closed!", Id, record.InstanceId);
-                    record.FinalValueBallot = message.BallotId;
+                    record.LastUpdateBallot = message.BallotId;
                     record.FinalValue = message.Value;
 
                     if (message.InstanceId > _highestClosedInstanceId)
@@ -252,10 +258,10 @@ namespace PaxosSharp
             return false;
         }
 
-        private bool UpdateRecord(LearnMessage message)
+        private bool UpdateRecord(AcceptResponseMessage message)
         {
             // Not enough storage, drop the message
-            if (message.InstanceId >= _highestQueuedInstanceId + _records.Length)
+            if (message.InstanceId >= _highestQueuedInstanceId + _instanceStates.Length)
             {
                 Log(TraceEventType.Verbose,"L{0}: Dropping learn for instance too far in future:{1}", Id, message.InstanceId);
                 return false;
@@ -270,7 +276,7 @@ namespace PaxosSharp
 
             // Found record that can be cleaned and reused for new
             // instance id record
-            var record = _records[GetRecordIndex(message.InstanceId)];
+            var record = _instanceStates[GetRecordIndex(message.InstanceId)];
             if (record.InstanceId != message.InstanceId)
             {
                 Log(TraceEventType.Verbose,"L{0}: Received first message for instance:{1}", Id, message.InstanceId);
@@ -289,12 +295,12 @@ namespace PaxosSharp
             return AddLearnToRecord(record, message);
         }
 
-        private bool IsClosed(LearnerRecord record)
+        private bool IsClosed(LearnerState record)
         {
             return record.FinalValue != null;
         }
 
-        private bool AddLearnToRecord(LearnerRecord record, LearnMessage message)
+        private bool AddLearnToRecord(LearnerState record, AcceptResponseMessage message)
         {
             // Check bounds
             if (message.AcceptorId < 0 || message.AcceptorId > Configuration.AcceptorCount)
@@ -303,11 +309,11 @@ namespace PaxosSharp
             }
 
             // First learn message from this acceptor.
-            var oldLearn = record.LearnMessages[message.AcceptorId];
+            var oldLearn = record.ResponseMessages[message.AcceptorId];
             if (oldLearn == null)
             {
                 Log(TraceEventType.Verbose,"L{0}: Got first learn for instance:{1}, acceptor:{2}", Id, record.InstanceId,  message.AcceptorId);
-                record.LearnMessages[message.AcceptorId] = new LearnMessage(
+                record.ResponseMessages[message.AcceptorId] = new AcceptResponseMessage(
                     message.InstanceId, message.Value, message.BallotId, message.AcceptorId);
                 return true;
             }
@@ -321,14 +327,14 @@ namespace PaxosSharp
 
             // Relevant message, overwrite previous learn
             Log(TraceEventType.Verbose,"L{0}: Overwriting previous learn for instance {1}", Id, record.InstanceId);
-            record.LearnMessages[message.AcceptorId] = new LearnMessage(
+            record.ResponseMessages[message.AcceptorId] = new AcceptResponseMessage(
                     message.InstanceId, message.Value, message.BallotId, message.AcceptorId);
             return true;
         }
 
         private long GetRecordIndex(long n)
         {
-            return n & (_records.Length - 1);
+            return n & (_instanceStates.Length - 1);
         }
 
         private void Log(TraceEventType type, string format, params object[] args)
@@ -347,32 +353,43 @@ namespace PaxosSharp
             internal LearnerValueWrapper Next { get; set; }
         }
 
-        internal class LearnerRecord
+        internal class LearnerState
         {
-            public LearnerRecord(int instanceId, int acceptorCount)
+            public LearnerState(int instanceId, int acceptorCount)
             {
                 InstanceId = instanceId;
                 FinalValue = null;
-                FinalValueBallot = -1;
-                LearnMessages = new LearnMessage[acceptorCount];
+                LastUpdateBallot = -1;
+                ResponseMessages = new AcceptResponseMessage[acceptorCount];
             }
 
             public int InstanceId { get; private set; }
 
-            public LearnMessage[] LearnMessages { get; private set; }
+            public AcceptResponseMessage[] ResponseMessages { get; private set; }
 
-            public int FinalValueBallot { get; set; }
+            public int LastUpdateBallot { get; set; }
 
             public string FinalValue { get; set; }
+
+            public void Clear()
+            {
+                InstanceId = 0;
+                LastUpdateBallot = 0;
+                FinalValue = null;
+                for (var i = 0; i < ResponseMessages.Length; i++)
+                {
+                    ResponseMessages[i] = null;
+                }
+            }
 
             public void ReuseRecordForInstanceId(int instanceId)
             {
                 InstanceId = instanceId;
                 FinalValue = null;
-                FinalValueBallot = -1;
-                for (var i = 0; i < LearnMessages.Length; i++)
+                LastUpdateBallot = -1;
+                for (var i = 0; i < ResponseMessages.Length; i++)
                 {
-                    LearnMessages[i] = null;
+                    ResponseMessages[i] = null;
                 }
             }
         }

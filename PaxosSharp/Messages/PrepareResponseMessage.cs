@@ -1,8 +1,13 @@
 namespace PaxosSharp.Messages
 {
-    internal class PromiseMessage : Message
+    /// <summary>
+    /// PrepareResponseMessage.
+    /// Used in Phase 1b.
+    /// Sent from the Acceptor to the Proposer.
+    /// </summary>
+    internal class PrepareResponseMessage : Message
     {
-        public PromiseMessage(int instanceId, int ballotId, int valueBallotId, string value, int acceptorId)
+        public PrepareResponseMessage(int instanceId, int ballotId, int valueBallotId, string value, int acceptorId)
         {
             InstanceId = instanceId;
             BallotId = ballotId;

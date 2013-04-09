@@ -1,8 +1,13 @@
 namespace PaxosSharp.Messages
 {
-    internal class LearnMessage : Message
+    /// <summary>
+    /// AcceptResponseMessage.
+    /// Used in Phase 2b.
+    /// Sent from the Acceptor to the Learner.
+    /// </summary>
+    internal class AcceptResponseMessage : Message
     {
-        public LearnMessage(int instanceId, string value, int ballotId, int acceptorId)
+        public AcceptResponseMessage(int instanceId, string value, int ballotId, int acceptorId)
         {
             InstanceId = instanceId;
             Value = value;
