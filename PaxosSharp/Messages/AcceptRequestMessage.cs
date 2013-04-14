@@ -5,7 +5,7 @@ namespace PaxosSharp.Messages
     /// Used in Phase 2a.
     /// Sent from the Proposer to the Acceptor.
     /// </summary>
-    internal class AcceptRequestMessage : Message
+    public class AcceptRequestMessage : Message
     {
         public AcceptRequestMessage(int instanceId, int ballotId, string value)
         {

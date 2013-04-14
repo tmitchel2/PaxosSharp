@@ -5,7 +5,7 @@ namespace PaxosSharp.Messages
     /// </summary>
     internal class PingMessage : Message
     {
-        public PingMessage(int proposerId, int sequenceId)
+        public PingMessage(int proposerId, long sequenceId)
         {
             ProposerId = proposerId;
             SequenceId = sequenceId;
@@ -13,6 +13,6 @@ namespace PaxosSharp.Messages
 
         public int ProposerId { get; private set; }
 
-        public int SequenceId { get; private set; }
+        public long SequenceId { get; private set; }
     }
 }

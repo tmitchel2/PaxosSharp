@@ -7,19 +7,25 @@ namespace PaxosSharp.Messages
     /// </summary>
     internal class AcceptResponseMessage : Message
     {
-        public AcceptResponseMessage(int instanceId, string value, int ballotId, int acceptorId)
+        public AcceptResponseMessage(int instanceId, string value, int ballotId, int valueBallotId, bool isFinal, int acceptorId)
         {
             InstanceId = instanceId;
             Value = value;
             BallotId = ballotId;
+            ValueBallotId = valueBallotId;
+            IsFinal = isFinal;
             AcceptorId = acceptorId;
         }
-
-        public string Value { get; private set; }
 
         public int InstanceId { get; private set; }
 
         public int BallotId { get; private set; }
+
+        public int ValueBallotId { get; private set; }
+
+        public bool IsFinal { get; private set; }
+
+        public string Value { get; private set; }
 
         public int AcceptorId { get; private set; }
     }

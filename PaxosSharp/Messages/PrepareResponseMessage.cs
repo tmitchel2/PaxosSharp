@@ -7,6 +7,8 @@ namespace PaxosSharp.Messages
     /// </summary>
     internal class PrepareResponseMessage : Message
     {
+        public const int InfinitePrepareInstanceId = -1;
+
         public PrepareResponseMessage(int instanceId, int ballotId, int valueBallotId, string value, int acceptorId)
         {
             InstanceId = instanceId;
