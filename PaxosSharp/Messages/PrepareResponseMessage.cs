@@ -1,3 +1,5 @@
+using System.Runtime.Serialization;
+
 namespace PaxosSharp.Messages
 {
     /// <summary>
@@ -5,6 +7,7 @@ namespace PaxosSharp.Messages
     /// Used in Phase 1b.
     /// Sent from the Acceptor to the Proposer.
     /// </summary>
+    [DataContract]
     internal class PrepareResponseMessage : Message
     {
         public const int InfinitePrepareInstanceId = -1;
@@ -18,14 +21,19 @@ namespace PaxosSharp.Messages
             AcceptorId = acceptorId;
         }
 
+        [DataMember(Order = 1)]
         public int InstanceId { get; set; }
 
+        [DataMember(Order = 2)]
         public int BallotId { get; set; }
 
+        [DataMember(Order = 3)]
         public int ValueBallotId { get; set; }
 
+        [DataMember(Order = 4)]
         public string Value { get; set; }
 
+        [DataMember(Order = 5)]
         public int AcceptorId { get; set; }
     }
 }

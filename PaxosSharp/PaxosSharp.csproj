@@ -32,6 +32,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -41,13 +42,18 @@
   <ItemGroup>
     <Compile Include="Acceptor.cs" />
     <Compile Include="Guard.cs" />
-    <Compile Include="InMemoryNonVolatileStorage.cs" />
-    <Compile Include="IMessageBus.cs">
+    <Compile Include="Storage\InMemoryNonVolatileStorage.cs" />
+    <Compile Include="MessageBus\IMessageBus.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="INonVolatileStorage.cs" />
+    <Compile Include="Storage\INonVolatileStorage.cs" />
     <Compile Include="Learner.cs" />
     <Compile Include="LinqExtensions.cs" />
+    <Compile Include="Serialization\DataContractMessageSerialiser.cs" />
+    <Compile Include="Serialization\IMessageSerialiser.cs" />
+    <Compile Include="MessageBus\InProcessMessageBus.cs" />
+    <Compile Include="MessageBus\UdpMulticastMessageBus.cs" />
+    <Compile Include="MessageBus\UdpSingleMachineMessageBus.cs" />
     <Compile Include="Messages\AcceptRequestMessage.cs" />
     <Compile Include="Messages\LeaderMessage.cs" />
     <Compile Include="Messages\PingMessage.cs" />

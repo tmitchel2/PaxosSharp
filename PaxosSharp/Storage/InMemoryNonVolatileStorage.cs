@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using PaxosSharp.Messages;
 
-namespace PaxosSharp
+namespace PaxosSharp.Storage
 {
     public class InMemoryNonVolatileStorage : INonVolatileStorage
     {

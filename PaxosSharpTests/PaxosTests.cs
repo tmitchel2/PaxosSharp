@@ -12,7 +12,7 @@ namespace PaxosSharpTests
         [Test]
         public void Test1()
         {
-            var config = new PaxosConfiguration(new SimpleMessageBus());
+            var config = new PaxosConfiguration();
             config.TraceSource.Listeners.Add(new ConsoleTraceListener());
 
             var learner0 = new Learner(config, 0);

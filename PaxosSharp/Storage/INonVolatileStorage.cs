@@ -1,6 +1,6 @@
 using PaxosSharp.Messages;
 
-namespace PaxosSharp
+namespace PaxosSharp.Storage
 {
     public interface INonVolatileStorage
     {

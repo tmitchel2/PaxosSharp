@@ -1,14 +1,15 @@
 using System;
 using System.Diagnostics;
+using PaxosSharp.MessageBus;
+using PaxosSharp.Storage;
 
 namespace PaxosSharp
 {
     public sealed class PaxosConfiguration
     {
-        public PaxosConfiguration(IMessageBus messageBus)
+        public PaxosConfiguration()
         {
-            Guard.ArgumentNotNull(messageBus, "messageBus");
-            MessageBus = messageBus;
+            MessageBus = new UdpSingleMachineMessageBus();
             NonVolatileStorage = new InMemoryNonVolatileStorage();
             TraceSource = new TraceSource("Paxos", SourceLevels.Verbose);
             

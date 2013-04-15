@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using PaxosSharp.MessageBus;
 using PaxosSharp.Messages;
 
-namespace PaxosSharpTests
+namespace PaxosSharp.MessageBus
 {
-    internal class SimpleMessageBus : IMessageBus
+    internal class InProcessMessageBus : IMessageBus
     {
         private readonly ConcurrentDictionary<Func<Message, Task<bool>>, object> _callbacks;
 
-        public SimpleMessageBus()
+        public InProcessMessageBus()
         {
             _callbacks = new ConcurrentDictionary<Func<Message, Task<bool>>, object>();
         }

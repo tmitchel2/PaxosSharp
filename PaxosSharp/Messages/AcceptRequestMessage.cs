@@ -1,3 +1,5 @@
+using System.Runtime.Serialization;
+
 namespace PaxosSharp.Messages
 {
     /// <summary>
@@ -5,6 +7,7 @@ namespace PaxosSharp.Messages
     /// Used in Phase 2a.
     /// Sent from the Proposer to the Acceptor.
     /// </summary>
+    [DataContract]
     public class AcceptRequestMessage : Message
     {
         public AcceptRequestMessage(int instanceId, int ballotId, string value)
@@ -14,10 +17,13 @@ namespace PaxosSharp.Messages
             Value = value;
         }
 
+        [DataMember(Order = 1)]
         public int InstanceId { get; private set; }
 
+        [DataMember(Order = 2)]
         public int BallotId { get; private set; }
 
+        [DataMember(Order = 3)]
         public string Value { get; private set; }
     }
 }
